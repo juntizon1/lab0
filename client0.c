@@ -17,16 +17,14 @@
 /* large main() function                                              */
 /**********************************************************************/
 							       
-
+int msg(int sd, struct sockaddr_in server_address);
 int main(int argc, char *argv[])
 {
 
   int sd; /* the socket descriptor */
   struct sockaddr_in server_address;  /* structures for addresses */
   struct sockaddr_in inaddr;  /* structures for checking addresses */
-  int rc;
   int i; /* loop variable */
-  char bufferOut [100];
   char serverIP[20]; // provided by the user on the command line */
   int portNumber = 0; // provided by the user on the command line
   /* check to see if the right number of parameters was entered */
@@ -67,9 +65,16 @@ int main(int argc, char *argv[])
   server_address.sin_family = AF_INET; /* use AF_INET addresses */
   server_address.sin_port = htons(portNumber); /* convert port number */
   server_address.sin_addr.s_addr = inet_addr(serverIP); /* convert IP addr */
-  
+  msg( sd, server_address);
+  return 0;
+}
+int msg(int sd, struct sockaddr_in server_address){
+  char bufferOut [100];
+  int rc;
+
   memset (bufferOut, 0, 100); // ALWAYS null out buffers in C before using them
-  sprintf (bufferOut, "hello world");
+  sprintf (bufferOut, "hello world"); //stores the string into bufferOut
+  printf("%s \n", bufferOut); // prints the string that is stored into bufferOut
 
   rc = sendto(sd, bufferOut, strlen(bufferOut), 0,
 	      (struct sockaddr *) &server_address, sizeof(server_address));
@@ -78,9 +83,10 @@ int main(int argc, char *argv[])
   /* what is a bad RC from sendto?                         */
   if (rc < strlen(bufferOut)){
     perror ("sendto");
-    // do i exit?
   }
+  return 0;
+    // do i exit?
   
+  
+  }
 
-
-}
