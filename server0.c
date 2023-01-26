@@ -15,25 +15,22 @@
 /* from the client, and print it out. Make this your     */
 /* own. Comment it, modularize it, learn it, fix it, etc */
 /*********************************************************/
-
+int retrieveMsg(int sd, struct sockaddr_in server_address);
 int main(int argc, char *argv[])
 {
   int sd; /* socket descriptor */
   int i;  /* loop variable */
   struct sockaddr_in server_address; /* my address */
-  struct sockaddr_in from_address;  /* address of sender */
-  char bufferReceived[1000]; // used in recvfrom
-  int portNumber; // get this from command line
-  int rc; // always need to check return codes!
-  socklen_t fromLength;
-  int flags = 0; // used for recvfrom
-  
+  int portNumber = 0; // get this from command line
   /* first, decide if we have the right number of parameters */
   if (argc < 2){
     printf("usage is: server <portnumber>\n");
     exit (1);
   }
-
+  server_address.sin_family = AF_INET; /* use AF_INET addresses */
+  server_address.sin_port = htons(portNumber); /* convert port number */
+  server_address.sin_addr.s_addr = INADDR_ANY; /* any adapter */
+  
 
   /* first create a socket */
   sd = socket(AF_INET, SOCK_DGRAM, 0); /* create a socket */
@@ -48,7 +45,7 @@ int main(int argc, char *argv[])
   for (i=0;i<strlen(argv[1]); i++){
     if (!isdigit(argv[1][i]))
       {
-	printf ("The Portnumber isn't a number!\n");
+	printf ("The Portnumber isn't a number!\n"); //tell the user that the input was invalid
 	exit(1);
       }
   }
@@ -56,38 +53,44 @@ int main(int argc, char *argv[])
   portNumber = strtol(argv[1], NULL, 10); /* many ways to do this */
 
   if ((portNumber > 65535) || (portNumber < 0)){
-    printf ("you entered an invalid port number\n");
+    printf ("you entered an invalid port number\n"); //lets the user know that the port number was beyond the valid range
     exit (1);
   }
-
-  server_address.sin_family = AF_INET; /* use AF_INET addresses */
-  server_address.sin_port = htons(portNumber); /* convert port number */
-  server_address.sin_addr.s_addr = INADDR_ANY; /* any adapter */
+  retrieveMsg(sd, server_address);
+  return 0;
+}
+int retrieveMsg(int sd, struct sockaddr_in server_address){ //Retrieves the message from the client and spits out the string
+  char bufferReceived[1000]; // used in recvfrom
+  int rc; // always need to check return codes!
+  struct sockaddr_in from_address;  /* address of sender */
+  socklen_t fromLength;
+  int flags = 0; // used for recvfrom
   
-  /* the next step is to bind to the address */
+  /* bind to the client address */
   rc = bind (sd, (struct sockaddr *)&server_address,
-	     sizeof(struct sockaddr ));
+	     sizeof(struct sockaddr )); //Binds the server address from the client to the server
   
   if (rc < 0){
     perror("bind");
     exit (1);
   }
-  memset (bufferReceived, 0, 1000); // zero out the buffers in C
+  memset (bufferReceived, 0, 1000); // always zero out the buffer before using it
 
   /* NOTE - you MUST MUST MUST give fromLength an initial value */
   fromLength = sizeof(struct sockaddr_in);
 
   rc = recvfrom(sd, bufferReceived, 1000, flags,
-		(struct sockaddr *)&from_address, &fromLength);
+		(struct sockaddr *)&from_address, &fromLength); //receive buffer from the client
 
-  /* check for any possible errors */
+  /* check for any possible errors and exit if any are found */
   if (rc <=0){
     perror ("recvfrom");
     printf ("leaving, due to socket error on recvfrom\n");
     exit (1);
   }
-  /* print out what i get */
+  /* print out what the we receive from the client*/
   printf ("received '%s'\n", bufferReceived);
     
+  return 0;
 
 } // end of main()
